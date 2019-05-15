@@ -1,0 +1,121 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+//ESTE ARQUIVO É O SERVIDOR DA APLICAÇÃO, MAIN FILE DE UM NODE.JS EXPRESS APP
+
+
+const app = require('../app');
+const debug = require('debug')('testapi:server');
+const http = require('http');
+const Db = require('../src/config/mongodb');
+
+//criação do cluster
+const cluster = require('cluster');
+const numCPUs = require('os').cpus().length;
+//criação do cluster - end
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+const normalizePort = val => {
+    const port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+const port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+//cluster - se entrar no if, cluster master - senão slave
+if (cluster.isMaster) {
+    for (let i = 0; i < numCPUs; i++) {
+        cluster.fork();
+    }
+    cluster.on('exit', () => {
+        console.log(`the process ${process.pid} was killed`);
+        Db.disconnect();
+        cluster.fork();
+    });
+    //cluster - fluxo normal continuaria sem o else
+} else {
+
+    /** inserido antes porque foi alterado de var para const **/
+
+    /**
+     * Create HTTP server.
+     */
+
+
+    /**
+     * Event listener for HTTP server "error" event.
+     */
+
+    const onError = error => {
+        if (error.syscall !== 'listen') {
+            throw error;
+        }
+
+        const bind = typeof port === 'string'
+            ? 'Pipe ' + port
+            : 'Port ' + port;
+
+        // handle specific listen errors with friendly messages
+        switch (error.code) {
+            //not have access to this port
+            case 'EACCES':
+                console.error(`${bind} requires elevated privileges`);
+                process.exit(1);
+                break;
+            //port already in use
+            case 'EADDRINUSE':
+                console.error(`${bind} is already in use`);
+                process.exit(1);
+                break;
+            default:
+                throw error;
+        }
+    };
+
+    /**
+     * Event listener for HTTP server "listening" event.
+     */
+
+    const onListening = () => {
+        var addr = server.address();
+        var bind = typeof addr === 'string'
+            ? 'pipe ' + addr
+            : 'port ' + addr.port;
+        console.log(`Listening on ${bind}`);
+        debug('Listening on ' + bind);
+    };
+
+    const server = http.createServer(app);
+
+    /**
+     * Listen on provided port, on all network interfaces.
+     */
+
+    server.listen(port);
+    server.on('error', onError);
+    server.on('listening', onListening);
+
+
+}

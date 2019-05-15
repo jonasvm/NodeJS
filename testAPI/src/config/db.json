@@ -1,0 +1,4 @@
+{
+  "dbName": "testeAPI",
+  "uri": "mongodb://localhost:27017"
+}
